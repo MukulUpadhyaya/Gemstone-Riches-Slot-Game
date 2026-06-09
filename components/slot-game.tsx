@@ -27,6 +27,66 @@ export function SlotGame() {
   const [bonusTotal, setBonusTotal] = useState(0)
   const [showBonusIntro, setShowBonusIntro] = useState(false)
 
+  type SoundName =
+    | "spin"
+    | "reel"
+    | "win"
+    | "bigwin"
+    | "megawin"
+    | "bonus"
+    | "click"
+
+  const soundsRef = useRef<Record<SoundName, HTMLAudioElement> | null>(null)
+  const [soundUnlocked, setSoundUnlocked] = useState(false)
+
+  useEffect(() => {
+    if (!soundsRef.current) {
+      const makeAudio = (src: string, volume = 0.5) => {
+        const audio = new Audio(src)
+        audio.preload = "auto"
+        audio.volume = volume
+        return audio
+      }
+
+      soundsRef.current = {
+        spin: makeAudio("/assets/sounds/spin.wav", 0.33),
+        reel: makeAudio("/assets/sounds/reel.wav", 0.35),
+        win: makeAudio("/assets/sounds/win.wav", 0.45),
+        bigwin: makeAudio("/assets/sounds/bigwin-voice.wav", 0.6),
+        megawin: makeAudio("/assets/sounds/megawin-voice.wav", 0.65),
+        bonus: makeAudio("/assets/sounds/bonus-voice.wav", 0.55),
+        click: makeAudio("/assets/sounds/click.wav", 0.42),
+      }
+    }
+  }, [])
+
+  const unlockAudio = useCallback(() => {
+    if (soundUnlocked || !soundsRef.current) return
+    const clickAudio = soundsRef.current.click
+    if (!clickAudio) return
+
+    clickAudio.muted = true
+    clickAudio.currentTime = 0
+    void clickAudio.play()
+      .catch(() => {})
+      .finally(() => {
+        clickAudio.pause()
+        clickAudio.muted = false
+        setSoundUnlocked(true)
+      })
+  }, [soundUnlocked])
+
+  const playSound = useCallback(
+    (name: SoundName) => {
+      unlockAudio()
+      const audio = soundsRef.current?.[name]
+      if (!audio) return
+      audio.currentTime = 0
+      void audio.play().catch(() => {})
+    },
+    [unlockAudio],
+  )
+
   const queuedCheat = useRef<CheatMode>(null)
   const bet = BET_STEPS[betIndex]
 
@@ -64,9 +124,16 @@ export function SlotGame() {
         setBalance((b) => b + result.totalWin)
         if (isFree) setBonusTotal((t) => t + result.totalWin)
 
-        if (result.tier === "big" || result.tier === "mega") {
+        if (result.tier === "mega") {
+          playSound("megawin")
           await renderer.playWinCelebration(result.tier, result.totalWin)
+        } else if (result.tier === "big") {
+          playSound("bigwin")
+          await renderer.playWinCelebration(result.tier, result.totalWin)
+        } else {
+          playSound("win")
         }
+
         setMessage(
           `${result.tier === "mega" ? "MEGA WIN! " : result.tier === "big" ? "BIG WIN! " : ""}You won ${result.totalWin.toLocaleString()}!`,
         )
@@ -76,16 +143,17 @@ export function SlotGame() {
 
       return result
     },
-    [],
+    [playSound],
   )
 
   const startBonus = useCallback(() => {
+    playSound("bonus")
     setInBonus(true)
     setBonusTotal(0)
     setFreeSpins(FREE_SPINS_AWARDED)
     setShowBonusIntro(true)
     rendererRef.current?.setBonusTint(true)
-  }, [])
+  }, [playSound])
 
   const doSpin = useCallback(async () => {
     if (busy || !ready) return
@@ -125,6 +193,8 @@ export function SlotGame() {
     setLastWin(0)
     setBalance((b) => b - bet)
     setMessage("Spinning...")
+    playSound("spin")
+    setTimeout(() => playSound("reel"), 120)
 
     const cheat = queuedCheat.current
     queuedCheat.current = null
@@ -140,6 +210,7 @@ export function SlotGame() {
   const triggerCheat = useCallback(
     (mode: CheatMode) => {
       if (busy || inBonus) return
+      playSound("click")
       queuedCheat.current = mode
       setMessage(
         mode === "bonus"
@@ -151,7 +222,7 @@ export function SlotGame() {
       // auto-spin to reveal cheat
       setTimeout(() => doSpin(), 60)
     },
-    [busy, inBonus, doSpin],
+    [busy, inBonus, doSpin, playSound],
   )
 
   // keyboard cheat codes

@@ -5,7 +5,7 @@ export default function Page() {
     <main className="relative min-h-dvh w-full overflow-hidden bg-[var(--casino-bg)]">
       <div
         className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-40"
-        style={{ backgroundImage: "url(/bg.png)" }}
+        style={{ backgroundImage: "url(/assets/images/bg.png)" }}
         aria-hidden="true"
       />
       <div className="relative z-10">

@@ -23,13 +23,13 @@ export interface SymbolDef {
 export const SCATTER: SymbolId = "scatter"
 
 export const SYMBOLS: Record<SymbolId, SymbolDef> = {
-  crown: { id: "crown", texture: "/symbols/crown.png", pays: [10, 40, 150], weight: 3 },
-  diamond: { id: "diamond", texture: "/symbols/diamond.png", pays: [6, 20, 80], weight: 5 },
-  coin: { id: "coin", texture: "/symbols/coin.png", pays: [4, 12, 50], weight: 6 },
-  ruby: { id: "ruby", texture: "/symbols/ruby.png", pays: [2, 8, 30], weight: 8 },
-  emerald: { id: "emerald", texture: "/symbols/emerald.png", pays: [2, 6, 25], weight: 9 },
-  sapphire: { id: "sapphire", texture: "/symbols/sapphire.png", pays: [1, 5, 20], weight: 10 },
-  scatter: { id: "scatter", texture: "/symbols/scatter.png", pays: [0, 0, 0], weight: 2 },
+  crown: { id: "crown", texture: "/assets/symbols/crown.png", pays: [10, 40, 150], weight: 3 },
+  diamond: { id: "diamond", texture: "/assets/symbols/diamond.png", pays: [6, 20, 80], weight: 5 },
+  coin: { id: "coin", texture: "/assets/symbols/coin.png", pays: [4, 12, 50], weight: 6 },
+  ruby: { id: "ruby", texture: "/assets/symbols/ruby.png", pays: [2, 8, 30], weight: 8 },
+  emerald: { id: "emerald", texture: "/assets/symbols/emerald.png", pays: [2, 6, 25], weight: 9 },
+  sapphire: { id: "sapphire", texture: "/assets/symbols/sapphire.png", pays: [1, 5, 20], weight: 10 },
+  scatter: { id: "scatter", texture: "/assets/symbols/scatter.png", pays: [0, 0, 0], weight: 2 },
 }
 
 export const PAYLINES: number[][] = [
