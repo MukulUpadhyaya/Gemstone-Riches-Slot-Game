@@ -34,17 +34,21 @@ export function SlotGame() {
     | "bigwin"
     | "megawin"
     | "bonus"
+    | "bgLoop"
+    | "bonusLoop"
     | "click"
 
   const soundsRef = useRef<Record<SoundName, HTMLAudioElement> | null>(null)
+  const activeEffectRef = useRef<HTMLAudioElement | null>(null)
   const [soundUnlocked, setSoundUnlocked] = useState(false)
 
   useEffect(() => {
     if (!soundsRef.current) {
-      const makeAudio = (src: string, volume = 0.5) => {
+      const makeAudio = (src: string, volume = 0.5, loop = false) => {
         const audio = new Audio(src)
         audio.preload = "auto"
         audio.volume = volume
+        audio.loop = loop
         return audio
       }
 
@@ -55,6 +59,8 @@ export function SlotGame() {
         bigwin: makeAudio("/assets/sounds/bigwin-voice.wav", 0.6),
         megawin: makeAudio("/assets/sounds/megawin-voice.wav", 0.65),
         bonus: makeAudio("/assets/sounds/bonus-voice.wav", 0.55),
+        bgLoop: makeAudio("/assets/sounds/bg-loop.wav", 0.22, true),
+        bonusLoop: makeAudio("/assets/sounds/bonus-loop.wav", 0.24, true),
         click: makeAudio("/assets/sounds/click.wav", 0.42),
       }
     }
@@ -76,16 +82,58 @@ export function SlotGame() {
       })
   }, [soundUnlocked])
 
+  const stopEffectSound = useCallback(() => {
+    const active = activeEffectRef.current
+    if (!active) return
+    active.pause()
+    active.currentTime = 0
+    activeEffectRef.current = null
+  }, [])
+
   const playSound = useCallback(
     (name: SoundName) => {
       unlockAudio()
       const audio = soundsRef.current?.[name]
       if (!audio) return
+
+      if (name === "bgLoop" || name === "bonusLoop") {
+        const otherLoop = name === "bgLoop" ? soundsRef.current?.bonusLoop : soundsRef.current?.bgLoop
+        otherLoop?.pause()
+        if (audio.paused) {
+          audio.currentTime = 0
+          void audio.play().catch(() => {})
+        }
+        return
+      }
+
+      stopEffectSound()
       audio.currentTime = 0
+      activeEffectRef.current = audio
       void audio.play().catch(() => {})
     },
-    [unlockAudio],
+    [unlockAudio, stopEffectSound],
   )
+
+  useEffect(() => {
+    if (!soundUnlocked || !soundsRef.current) return
+    const bg = soundsRef.current.bgLoop
+    const bonus = soundsRef.current.bonusLoop
+
+    if (inBonus) {
+      bonus?.play().catch(() => {})
+      bg?.pause()
+    } else {
+      bonus?.pause()
+      if (bg && bg.paused) {
+        void bg.play().catch(() => {})
+      }
+    }
+
+    return () => {
+      bg?.pause()
+      bonus?.pause()
+    }
+  }, [inBonus, soundUnlocked])
 
   const queuedCheat = useRef<CheatMode>(null)
   const bet = BET_STEPS[betIndex]
